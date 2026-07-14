@@ -1,0 +1,97 @@
+spring:
+  #  application:
+  #    name: User-Service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/HotelRatingSystem?currentSchema=userservice
+    username: postgres
+    password: 19111011
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  config:
+    import: configserver:http://localhost:8085
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://integrator-8069025.okta.com/oauth2/default
+      client:
+        registration:
+          my-internal-client:
+            provider: okta
+            authorizationGrantType: client_credentials
+            scope:
+              - internal
+            clientId: 0oaybe1horkX7YmMz697
+            clientSecret: CJSNwrPqtxHQ8ztxTCiSaBXceBhH-aNsxc6sCui8ejZAP47K7ZHq-dlCUx1kxFy5
+        provider:
+          okta:
+            issuerUri: https://integrator-8069025.okta.com/oauth2/default
+
+#  profiles:
+#    active: prod
+server:
+  port: 8081
+
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#  client:
+#    fetch-registry: true
+#    register-with-eureka: true
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+
+## Configuration of actuators
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+## Configuration of Resilience4J
+resilience4j:
+  circuitbreaker:
+    instances:
+      ratingHotelBreaking:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+
+## configuration of retry mechanism
+  retry:
+    instances:
+      ratingHotelService:
+        maxAttempts: 3
+        waitDuration: 5s
+
+## Rate limiter configuration
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limitRefreshPeriod: 4s
+        limitForPeriod: 2
+        timeoutDuration: 0s
+
+## OKTA Configuration
+okta:
+  oauth2:
+    issuer: https://integrator-8069025.okta.com/oauth2/default
+    audience: api://default
